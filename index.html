@@ -1239,7 +1239,10 @@ function flex(stat){
     paint();
   },260);
 }
-if(!reduce)setInterval(()=>{if(document.hidden)return;bob^=1;paint();},650);
+if(!reduce)setInterval(()=>{
+  if(document.hidden||!['title','pro','create','game'].includes(screen))return;
+  bob^=1;paint();
+},650);
 
 function show(name){
   screen=name;
