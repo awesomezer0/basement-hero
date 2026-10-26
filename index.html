@@ -35,6 +35,7 @@ body{margin:0}
   --bulb:#f5c542;
   --teal:#4cc2b0;
   --sky:#6aa7ff;
+  --violet:#b48cff;
   --blood:#d9525a;
   --font-display:"Press Start 2P",ui-monospace,monospace;
   --font-body:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -178,6 +179,10 @@ details.sub[open]>summary::before{content:"− "}
 .ach.on{opacity:1;box-shadow:inset 0 0 0 2px var(--bulb)}
 .ach b{display:block;font-size:13px;margin-bottom:2px;overflow-wrap:anywhere}
 .aic{width:24px;height:24px;image-rendering:pixelated;vertical-align:middle;margin-right:6px}
+.book-t{font-size:15px;font-weight:600;margin:0 0 8px;overflow-wrap:anywhere}
+.book-s{font-size:12px;color:var(--muted);margin:8px 0 12px}
+.book-f{display:grid;grid-template-columns:1fr 110px;gap:10px;margin-bottom:12px}
+@media (max-width:380px){.book-f{grid-template-columns:1fr}}
 .ach small{display:block;color:var(--muted);font-size:11px;line-height:1.4}
 .pip{display:inline-block;width:8px;height:8px;background:var(--line);margin-right:6px}
 .ach.on .pip{background:var(--bulb)}
@@ -251,7 +256,7 @@ details.sub[open]>summary::before{content:"− "}
     <button type="button" class="go" id="m-start">Старт</button>
     <button type="button" class="btn" id="m-set" data-en="Settings">Настройки</button>
   </div>
-  <p class="ver" data-en="BETA 0.5">БЕТА 0.5</p>
+  <p class="ver" data-en="BETA 0.6">БЕТА 0.6</p>
 </section>
 
 <!-- ПРОЛОГ -->
@@ -318,7 +323,7 @@ details.sub[open]>summary::before{content:"− "}
     <div id="bk-confirm" class="confirm" hidden style="margin-bottom:10px"></div>
     <p class="hint" data-en="A backup is a file with your hero. It helps if you change phones or clear browser data.">Копия — это файл с твоим героем. Пригодится, если сменишь телефон или очистишь данные браузера.</p>
     <span id="resetbox"><button type="button" class="link" id="reset">Сбросить прогресс</button></span>
-    <p class="hint" style="margin-bottom:0" data-en="Beta 0.5. The game is still in development.">Бета 0.5. Игра ещё дорабатывается.</p>
+    <p class="hint" style="margin-bottom:0" data-en="Beta 0.6. The game is still in development.">Бета 0.6. Игра ещё дорабатывается.</p>
   </div>
   <button type="button" class="btn small" id="set-back" data-en="Back">Назад</button>
 </section>
@@ -457,6 +462,11 @@ details.sub[open]>summary::before{content:"− "}
     <ul class="quests" id="quests"></ul>
   </section>
 
+  <section class="panel" aria-label="Книга">
+    <h2 class="h"><span data-en="Reading">Чтение</span><span class="streak" id="rstreak"></span></h2>
+    <div id="bookbox"></div>
+  </section>
+
   <section class="panel" aria-label="Босс недели">
     <h2 class="h"><span data-en="Weekly boss">Босс недели</span><button type="button" class="link mute" id="pedit">Изменить план</button></h2>
     <div id="bview"></div>
@@ -557,14 +567,17 @@ const STATS={
   str:{n:['Сила','Strength'],c:'var(--rust)'},
   leg:{n:['Ноги','Legs'],c:'var(--bulb)'},
   core:{n:['Корпус','Core'],c:'var(--sky)'},
-  end:{n:['Выносливость','Endurance'],c:'var(--teal)'}
+  end:{n:['Выносливость','Endurance'],c:'var(--teal)'},
+  mind:{n:['Ум','Mind'],c:'var(--violet)'}
 };
 const UNITS={
   rep:{n:['повт.','reps'],lab:['Повторения','Reps'],step:1,quick:[5,10,15,20,30,50]},
   sec:{n:['сек','sec'],lab:['Секунды','Seconds'],step:10,quick:[30,60,90,120,180]},
   min:{n:['мин','min'],lab:['Минуты','Minutes'],step:5,quick:[5,10,15,20,30]},
-  km:{n:['км','km'],lab:['Километры','Kilometers'],step:0.5,quick:[1,2,3,5,8]}
+  km:{n:['км','km'],lab:['Километры','Kilometers'],step:0.5,quick:[1,2,3,5,8]},
+  page:{n:['стр.','pages'],lab:['Страницы','Pages'],step:5,quick:[3,5,10,20,30,50]}
 };
+const MIN_PAGES=3, PAGE_CAP=60;
 const un=u=>P(UNITS[u].n);
 const sn=k=>P(STATS[k].n);
 const TIERS=[['Дрищ','Scrawny'],['Новичок','Rookie'],['Качок','Lifter'],['Атлет','Athlete'],['Титан','Titan']];
@@ -622,7 +635,11 @@ const EX=[
   {id:'burpee',n:'Берпи',s:'end',u:'rep',x:3,d:10,h:'Упор лёжа, прыжок вверх, хлопок над головой.'},
   {id:'jumps',n:'Прыжки на месте и скакалка',s:'end',u:'rep',x:0.3,d:50,h:'Со скакалкой или без неё.'},
   {id:'highknee',n:'Бег на месте с высокими коленями',s:'end',u:'sec',x:0.3,d:60,h:'Колени до уровня пояса, быстрый темп.'},
-  {id:'shadow',n:'Бой с тенью',s:'end',u:'min',x:8,d:5,h:'Удары и уклоны в быстром темпе, без остановок.'}
+  {id:'shadow',n:'Бой с тенью',s:'end',u:'min',x:8,d:5,h:'Удары и уклоны в быстром темпе, без остановок.'},
+  /* Ум */
+  {id:'read',n:'Чтение книги',s:'mind',u:'page',x:1.5,d:10,h:'Любая книга. Записывай только то, что правда прочитал.'},
+  {id:'readstudy',n:'Учебник или сложная книга',s:'mind',u:'page',x:2.5,d:8,h:'Текст, над которым надо думать: учёба, наука, документация.'},
+  {id:'readart',n:'Статьи и длинные тексты',s:'mind',u:'page',x:1,d:10,h:'Лонгриды и статьи. Примерно три экрана телефона за страницу.'}
 ];
 const EXEN={
   pushup:['Push-ups','Hands shoulder-width apart, body straight.'],
@@ -665,7 +682,10 @@ const EXEN={
   burpee:['Burpees','Plank, jump up, clap overhead.'],
   jumps:['Jumping in place or jump rope','With or without a rope.'],
   highknee:['High knees','Knees to waist level, fast pace.'],
-  shadow:['Shadowboxing','Punches and dodges at a fast pace, no breaks.']
+  shadow:['Shadowboxing','Punches and dodges at a fast pace, no breaks.'],
+  read:['Reading a book','Any book. Log only what you really read.'],
+  readstudy:['Textbook or hard book','Text you have to think about: study, science, documentation.'],
+  readart:['Articles and long reads','Long reads and articles. About three phone screens per page.']
 };
 const exName=ex=>(lang==='en'&&EXEN[ex.id])?EXEN[ex.id][0]:ex.n;
 const exHint=ex=>(lang==='en'&&EXEN[ex.id])?EXEN[ex.id][1]:(ex.h||T('Своё упражнение.','Custom exercise.'));
@@ -675,7 +695,8 @@ const QPOOL=[
   {id:'push',ex:'pushup',n:40,b:60},{id:'squat',ex:'squat',n:60,b:60},{id:'plank',ex:'plank',n:120,b:50},
   {id:'run',ex:'run',n:2,b:80},{id:'situp',ex:'situp',n:50,b:50},{id:'pull',ex:'pullup',n:10,b:70},
   {id:'lsq',ex:'lsquat',n:30,b:70},{id:'burpee',ex:'burpee',n:20,b:70},{id:'lunge',ex:'lunge',n:40,b:50},
-  {id:'wsit',ex:'wallsit',n:120,b:50},{id:'bike',ex:'bike',n:60,b:50},{id:'walk',ex:'walk',n:4,b:50}
+  {id:'wsit',ex:'wallsit',n:120,b:50},{id:'bike',ex:'bike',n:60,b:50},{id:'walk',ex:'walk',n:4,b:50},
+  {id:'read',ex:'read',n:15,b:50}
 ];
 
 const SKINS=['#f0c8a0','#e2b48c','#c68a5e','#8d5a3b'];
@@ -687,8 +708,8 @@ const STYLES=[['Ёжик','Crop'],['Длинные','Long'],['Лысый','Bald'
 const SHIRTS=['#8d92a3','#c8434b','#4c8fd9','#4cc2b0','#e0702f','#e9e6dc'];
 const SHIRT_N=[['Серая','Grey'],['Красная','Red'],['Синяя','Blue'],['Бирюзовая','Teal'],['Рыжая','Orange'],['Белая','White']];
 const SEXES=[['Парень','Boy'],['Девушка','Girl']];
-const FOCUS={str:['Сила','Strength'],leg:['Ноги','Legs'],core:['Корпус','Core'],end:['Выносливость','Endurance'],rest:['Отдых','Rest']};
-const FOCUS_ORDER=['str','leg','core','end','rest'];
+const FOCUS={str:['Сила','Strength'],leg:['Ноги','Legs'],core:['Корпус','Core'],end:['Выносливость','Endurance'],mind:['Ум','Mind'],rest:['Отдых','Rest']};
+const FOCUS_ORDER=['str','leg','core','end','mind','rest'];
 const DAYS=[['Пн','Mon'],['Вт','Tue'],['Ср','Wed'],['Чт','Thu'],['Пт','Fri'],['Сб','Sat'],['Вс','Sun']];
 const BOSSES=[['Крыса из подвала','Basement Rat'],['Ржавая гиря','Rusty Kettlebell'],['Паук-тяжеловес','Heavyweight Spider'],['Тень дивана','Couch Shadow'],['Король лени','King of Laziness'],['Тумбочка-великан','Giant Nightstand']];
 const BODY_M={w:{n:['Вес','Weight'],u:['кг','kg']},arm:{n:['Рука','Arm'],u:['см','cm']},chest:{n:['Грудь','Chest'],u:['см','cm']},waist:{n:['Талия','Waist'],u:['см','cm']}};
@@ -711,6 +732,7 @@ const ICONS={
   arrow:['.....yy.....','....yyyy....','...yyyyyy...','..yyyyyyyy..','....yyyy....','....yyyy....','....yyyy....','............','.........tt.','.......tttt.','.....tttttt.','tttttttttttt'],
   skull:['............','...wwwwww...','..wwwwwwww..','.wwwwwwwwww.','.wkkwwwwkkw.','.wkkwwwwkkw.','.wwwwkkwwww.','..wwwwwwww..','...wkwkwkw..','...wwwwwww..','............','............'],
   flag:['.gyyyyyyy...','.gyyyyyyyy..','.gyyyyyyy...','.gyyyyyy....','.g..........','.g..........','.g..........','.g..........','.g..........','.g..........','gggg........','gggg........'],
+  book:['............','.wwwww.wwwww','.wkkkw.wkkkw','.wwwww.wwwww','.wkkkw.wkkkw','.wwwww.wwwww','.wkkkw.wkkkw','.wwwww.wwwww','.ttttttttttt','............','............','............'],
   phoenix:['.....yy.....','....yyyy....','.o..oyyo..o.','oo.ooyyoo.oo','oooooyyooooo','.roooooooor.','..rooooooor.','...rroooorr.','.....oooo...','....ro..or..','...rr....rr.','..r........r'],
   heart:['............','..rrr..rrr..','.rrrrrrrrrr.','.rrrrrrrrrr.','.rrrrrrrrrr.','..rrrrrrrr..','...rrrrrr...','....rrrr....','.....rr.....','............','............','............']
 };
@@ -721,12 +743,12 @@ const LS='basement-hero-v1';
 function fresh(){
   return {
     v:3,rev:0,name:'Герой',lang:null,started:false,
-    xp:{str:0,leg:0,core:0,end:0},total:0,totals:{},
+    xp:{str:0,leg:0,core:0,end:0,mind:0},total:0,totals:{},
     log:[],days:[],claimed:[],ach:[],custom:[],
     look:{sex:0,skin:1,hair:0,style:0,shirt:-1},fans:'all',
     goal:null,body:[],
     plan:{items:[{ex:'pushup',t:100},{ex:'squat',t:150},{ex:'plank',t:240},{ex:'run',t:3}]},
-    wk:[],over:0,bosses:0,f:null,
+    wk:[],over:0,bosses:0,f:null,rd:[],book:null,books:0,owl:0,
     prog:['str','leg','rest','core','end','leg','rest']
   };
 }
@@ -736,11 +758,12 @@ function normalize(o){
   const s=Object.assign(f,o);
   s.xp=Object.assign(fresh().xp,o.xp||{});
   s.look=Object.assign(fresh().look,o.look||{});
-  ['log','days','claimed','ach','custom','body','wk'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[];});
+  ['log','days','claimed','ach','custom','body','wk','rd'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=[];});
   if(!s.totals||typeof s.totals!=='object')s.totals={};
   if(!s.plan||!Array.isArray(s.plan.items))s.plan=fresh().plan;
   if(!Array.isArray(s.prog)||s.prog.length!==7)s.prog=fresh().prog;
-  s.total=+s.total||0;s.rev=+s.rev||0;s.over=+s.over||0;s.bosses=+s.bosses||0;
+  s.total=+s.total||0;s.rev=+s.rev||0;s.over=+s.over||0;s.bosses=+s.bosses||0;s.books=+s.books||0;s.owl=+s.owl||0;
+  if(s.book&&typeof s.book==='object'&&+s.book.pages>0){s.book={title:String(s.book.title||'').slice(0,80),pages:+s.book.pages,read:Math.max(0,+s.book.read||0)};}else s.book=null;
   if(s.f&&typeof s.f==='object'){
     const q=s.f;
     ['last','peak','sd'].forEach(k=>{if(!q[k]||typeof q[k]!=='object')q[k]={};});
@@ -799,25 +822,41 @@ function inPause(d){
 function offDay(d){
   return inPause(d)||S.prog[(new Date(d*864e5).getUTCDay()+6)%7]==='rest';
 }
-function streak(){
+function streakOf(days,useRest){
   const set={};let min=Infinity;
-  S.days.forEach(k=>{const n=dayN(parseKey(k));set[n]=1;if(n<min)min=n;});
+  days.forEach(k=>{const n=dayN(parseKey(k));set[n]=1;if(n<min)min=n;});
   if(min===Infinity)return 0;
   let d=todayN();
   if(!set[d])d--;
   let n=0,miss=0,i=0;
   while(d>=min&&i++<800){
     if(set[d]){n++;miss=0;}
-    else if(!offDay(d)){miss++;if(miss>=2)break;}
+    else if(!(useRest?offDay(d):inPause(d))){miss++;if(miss>=2)break;}
     d--;
   }
   return n;
+}
+/* общая серия: день засчитан, если была тренировка ИЛИ чтение от 3 страниц */
+function streak(){return streakOf(S.days,true);}
+function readStreak(){return streakOf(S.rd,false);}
+function markRead(){const k=today();if(S.rd.indexOf(k)<0){S.rd.push(k);if(S.rd.length>400)S.rd.shift();}}
+function pagesToday(){
+  const d=today();let sum=0;
+  S.log.forEach(e=>{if(e.d!==d||e.bonus)return;const x=find(e.ex);if(x&&x.u==='page')sum+=e.amt;});
+  return sum;
+}
+function pagesTotal(){return list().filter(e=>e.u==='page').reduce((a,e)=>a+(S.totals[e.id]||0),0);}
+/* после 60 страниц за день опыт вдвое меньше, чтобы чтение не перекрывало всё остальное */
+function effAmt(ex,amt){
+  if(ex.u!=='page')return amt;
+  const full=Math.max(0,Math.min(amt,PAGE_CAP-pagesToday()));
+  return full+(amt-full)*0.5;
 }
 function weekKey(){const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return dkey(d);}
 function todayFocus(){return S.prog[(new Date().getDay()+6)%7];}
 function planMult(ex){return todayFocus()===ex.s?1.2:1;}
 function gain(ex,amt){
-  const b=xpFor(ex,amt);
+  const b=xpFor(ex,effAmt(ex,amt));
   if(b<=0)return 0;
   let g=Math.max(1,Math.round(b*planMult(ex)));
   if(memActive(ex.s))g+=Math.min(g,Math.max(0,Math.round(S.f.peak[ex.s]-(S.xp[ex.s]||0))));
@@ -828,11 +867,15 @@ function gain(ex,amt){
    Считаем по датам при каждом открытии игры, таймер не нужен.
    Значения усилены против реальных исследований, чтобы эффект был заметен:
    сила и корпус держатся дольше, выносливость уходит быстро. */
-const GRACE={str:21,leg:21,core:21,end:10};
-const RATE={str:0.012,leg:0.012,core:0.012,end:0.025};
+const GRACE={str:21,leg:21,core:21,end:10,mind:14};
+const RATE={str:0.012,leg:0.012,core:0.012,end:0.025,mind:0.015};
 const FLOOR=0.75, MEM_DAYS=12, PAUSE_COOL=30;
 function ensureF(){
-  if(S.f)return S.f;
+  if(S.f){
+    const g=S.f,t0=todayN();
+    Object.keys(STATS).forEach(k=>{if(g.last[k]===undefined){g.last[k]=t0;g.peak[k]=S.xp[k]||0;g.sd[k]=0;}});
+    return g;
+  }
   const tn=todayN(),f={last:{},peak:{},sd:{},dn:tn,pause:null,plog:[],fall:null,phx:0,mem:0,rep:null};
   const days={};
   S.log.forEach(e=>{
@@ -893,7 +936,7 @@ function formLine(k){
   const f=S.f;if(!f)return '';
   const tn=todayN();
   if(inPause(tn))return T('пауза','paused');
-  if(memActive(k))return T('мышечная память ×2 · до рекорда ещё ','muscle memory ×2 · to your record: ')+Math.round(f.peak[k]-(S.xp[k]||0))+' XP';
+  if(memActive(k))return (k==='mind'?T('знания возвращаются ×2 · до рекорда ещё ','knowledge returns ×2 · to your record: '):T('мышечная память ×2 · до рекорда ещё ','muscle memory ×2 · to your record: '))+Math.round(f.peak[k]-(S.xp[k]||0))+' XP';
   const idle=tn-f.last[k],left=GRACE[k]-idle,x=S.xp[k]||0;
   if(x<=f.peak[k]*FLOOR+0.5&&x<f.peak[k]-0.5)return T('дно формы, потеря остановилась','form floor, loss has stopped');
   if(left>0&&left<=7)return T('остывает через '+left+' дн.','cooling in '+left+' d');
@@ -1383,6 +1426,13 @@ const ACH=[
   {id:'l10',lose:1,n:['Качок','Lifter'],d:['Дорасти до 10 уровня. Звание можно потерять','Reach level 10. You can lose it'],ok:()=>lvl()>=10},
   {id:'l20',lose:1,n:['Атлет','Athlete'],d:['Дорасти до 20 уровня. Звание можно потерять','Reach level 20. You can lose it'],ok:()=>lvl()>=20},
   {id:'l30',lose:1,n:['Титан','Titan'],d:['Дорасти до 30 уровня. Звание можно потерять','Reach level 30. You can lose it'],ok:()=>lvl()>=30},
+  {id:'b1',n:['Первая книга','First book'],d:['Дочитай книгу до конца в игре','Finish a book in the game'],ok:()=>S.books>=1},
+  {id:'b5',n:['Книжный червь','Bookworm'],d:['Дочитай 5 книг','Finish 5 books'],ok:()=>S.books>=5},
+  {id:'p500',n:['Пятьсот страниц','Five hundred pages'],d:['500 страниц за всё время','500 pages in total'],ok:()=>pagesTotal()>=500},
+  {id:'p3000',n:['Библиотекарь','Librarian'],d:['3000 страниц за всё время','3000 pages in total'],ok:()=>pagesTotal()>=3000},
+  {id:'rs7',n:['Читатель','Reader'],d:['7 дней чтения подряд (от 3 страниц в день)','7 reading days in a row (3+ pages a day)'],ok:()=>readStreak()>=7},
+  {id:'rs30',n:['Привычка читать','Reading habit'],d:['30 дней чтения подряд','30 reading days in a row'],ok:()=>readStreak()>=30},
+  {id:'owl',secret:1,ic:'book',n:['Ночная сова','Night owl'],d:['Прочитай несколько страниц после 23:00','Read a few pages after 11 pm'],ok:()=>!!S.owl},
   {id:'phoenix',secret:1,ic:'phoenix',n:['Вернулся из пепла','Rise from the ashes'],d:['Потеряй 2 уровня и более из-за перерыва, а потом вернись на прежний уровень','Lose 2 or more levels to a break, then climb back to your old level'],ok:()=>!!S.f&&!!S.f.phx},
   {id:'memory',secret:1,ic:'dumbbell',n:['Мышцы помнят','Muscles remember'],d:['Верни прежний рекорд характеристики с помощью мышечной памяти','Regain a stat record with the help of muscle memory'],ok:()=>!!S.f&&!!S.f.mem}
 ];
@@ -1704,7 +1754,9 @@ function updatePreview(){
   $('go').textContent=T('Записать подход · +','Log set · +')+xp+' XP';
   $('go').disabled=xp<=0;
   let note='';
-  if(xp>0&&memActive(ex.s))note+=T('Мышечная память: опыт ×2, пока не вернёшь рекорд. ','Muscle memory: ×2 XP until you regain your record. ');
+  if(xp>0&&memActive(ex.s))note+=T('Память: опыт ×2, пока не вернёшь рекорд. ','Memory: ×2 XP until you regain your record. ');
+  if(xp>0&&ex.u==='page'&&pagesToday()+getAmt()>PAGE_CAP)note+=T('После '+PAGE_CAP+' страниц за день опыт вдвое меньше. ','After '+PAGE_CAP+' pages a day XP is halved. ');
+  if(ex.u==='page'&&pagesToday()+getAmt()<MIN_PAGES)note+=T('Для серии нужно хотя бы '+MIN_PAGES+' страницы за день. ','The streak needs at least '+MIN_PAGES+' pages a day. ');
   if(xp>0&&planMult(ex)>1)note+=T('Включая +20% за программу дня.','Includes +20% for today\'s program.');
   $('pvnote').textContent=note;
 }
@@ -1748,6 +1800,46 @@ function afterChange(levelBefore){
   const now=lvl();
   if(now>levelBefore)showLevelUp(now,levelBefore);
 }
+/* ---------- книга ---------- */
+function addToBook(amt){
+  const b=S.book;if(!b)return;
+  b.read+=amt;
+  if(b.read<b.pages)return;
+  const bonus=Math.min(300,60+Math.round(b.pages/2));
+  addBonus('mind',bonus,T('Книга: ','Book: ')+b.title);
+  S.books++;
+  toast(T('Книга дочитана · +','Book finished · +')+bonus+' XP');
+  S.book=null;
+}
+let bookKey='';
+function renderBook(){
+  const el=$('bookbox');if(!el)return;
+  const rs=readStreak();
+  $('rstreak').textContent=rs>0?T('Серия чтения: ','Reading streak: ')+rs+T(' дн.',' d'):'';
+  const key=JSON.stringify([S.book,S.books,Math.round(pagesTotal()),lang]);
+  if(key===bookKey)return;
+  bookKey=key;
+  const tot='<p class="book-s">'+esc(T('Прочитано книг: ','Books finished: ')+S.books+' · '+T('страниц всего: ','pages in total: ')+Math.round(pagesTotal()))+'</p>';
+  const rule='<p class="hint tight">'+esc(T('Записывай страницы как упражнение «Чтение» выше, они сами добавятся в книгу. День в серии засчитывается от '+MIN_PAGES+' страниц.','Log pages as a Reading exercise above and they are added to your book. A day counts for the streak from '+MIN_PAGES+' pages.'))+'</p>';
+  if(S.book){
+    const b=S.book,pct=Math.min(100,b.read/b.pages*100);
+    el.innerHTML='<p class="book-t">'+esc(b.title)+'</p>'+
+      '<div class="bar sm" style="--c:var(--violet)"><i style="width:'+pct+'%"></i></div>'+
+      '<p class="book-s" style="margin-bottom:8px">'+esc(T('стр. ','page ')+fmt(Math.min(b.read,b.pages))+T(' из ',' of ')+fmt(b.pages)+' · '+T('за конец книги бонус +','finish bonus +')+Math.min(300,60+Math.round(b.pages/2))+' XP')+'</p>'+
+      '<button type="button" class="link mute" id="bkdrop">'+T('Бросить книгу','Drop this book')+'</button>'+tot+rule;
+  }else{
+    el.innerHTML='<div class="book-f"><div><label class="lab" for="bktitle">'+T('Название','Title')+'</label><input id="bktitle" class="field" type="text" maxlength="80"></div>'+
+      '<div><label class="lab" for="bkpages">'+T('Страниц','Pages')+'</label><input id="bkpages" class="field" type="number" inputmode="numeric" min="1" step="1"></div></div>'+
+      '<button type="button" class="btn small" id="bkstart" style="width:100%;margin-bottom:12px">'+T('Начать книгу','Start a book')+'</button>'+tot+rule;
+  }
+}
+function startBook(){
+  const t=($('bktitle').value||'').trim().slice(0,80),n=Math.round(num($('bkpages').value));
+  if(!t||!(n>0)){toast(T('Впиши название и число страниц','Enter a title and the page count'));return;}
+  S.book={title:t,pages:Math.min(n,5000),read:0};
+  scheduleSave();renderAll();
+}
+function dropBook(){S.book=null;scheduleSave();renderAll();}
 function record(){
   const ex=cur(),amt=getAmt();
   if(!(amt>0))return;
@@ -1756,16 +1848,25 @@ function record(){
   S.xp[k]=(S.xp[k]||0)+xp;
   S.total+=xp;
   if(wasMem&&S.xp[k]>=f.peak[k]-0.01)f.mem=1;
-  if(f.last[k]!==tn)f.sd[k]=(f.sd[k]||0)+1;
-  f.last[k]=tn;
   S.totals[ex.id]=(S.totals[ex.id]||0)+amt;
   S.log.unshift({t:Date.now(),d:today(),ex:ex.id,en:exName(ex),amt:amt,xp:xp});
-  markDay();
+  const reading=ex.u==='page',okDay=!reading||pagesToday()>=MIN_PAGES;
+  if(okDay){
+    if(f.last[k]!==tn)f.sd[k]=(f.sd[k]||0)+1;
+    f.last[k]=tn;
+    markDay();
+    if(reading)markRead();
+  }
+  if(reading){
+    const h=new Date().getHours();
+    if(h>=23||h<4)S.owl=1;
+    addToBook(amt);
+  }
   claimQuests();
   claimWeek();
   if(S.log.length>300)S.log.length=300;
   popXp('+'+xp+' XP');
-  flex(ex.s);
+  if(ex.s!=='mind')flex(ex.s);
   afterChange(before);
 }
 
@@ -1840,9 +1941,9 @@ function drawCard(){
   x.drawImage(cv,0,0,128,84,34,112,472,310);
   x.strokeStyle='#3b3f4f';x.lineWidth=3;x.strokeRect(34,112,472,310);
   paint();
-  const cols={str:'#e0702f',leg:'#f5c542',core:'#6aa7ff',end:'#4cc2b0'};
+  const cols={str:'#e0702f',leg:'#f5c542',core:'#6aa7ff',end:'#4cc2b0',mind:'#b48cff'};
   Object.keys(STATS).forEach((k,i)=>{
-    const y=446+i*36,st=statLevel(S.xp[k]||0);
+    const y=446+i*31,st=statLevel(S.xp[k]||0);
     x.textAlign='left';x.fillStyle='#e9e6dc';x.font='600 15px '+B;x.fillText(sn(k),34,y);
     x.fillStyle='#101117';x.fillRect(200,y+2,230,14);
     x.fillStyle=cols[k];x.fillRect(200,y+2,230*st.pct/100,14);
@@ -1879,7 +1980,7 @@ function saveCard(){
 /* ---------- общий рендер ---------- */
 function renderAll(){
   renderHero();renderStats();renderGoal();renderQuests();renderPlan();renderAch();
-  renderLog();renderCustom();renderBody();refreshLook();renderProg();renderProgToday();renderForm();
+  renderLog();renderCustom();renderBody();refreshLook();renderProg();renderProgToday();renderForm();renderBook();
   updatePreview();paint();
 }
 
@@ -2092,6 +2193,13 @@ $('bk-confirm').addEventListener('click',e=>{
     applyLang();scheduleSave();
     toast(T('Прогресс восстановлен','Progress restored'));
   }
+});
+
+/* книга */
+$('bookbox').addEventListener('click',e=>{
+  const id=e.target&&e.target.id;
+  if(id==='bkstart')startBook();
+  else if(id==='bkdrop')dropBook();
 });
 
 /* пауза */
