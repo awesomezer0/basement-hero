@@ -1,5 +1,5 @@
 /* Подвальный герой: офлайн-кэш. Поменяешь файлы игры, увеличь число версии. */
-const VER='v2';
+const VER='v3';
 const SHELL='shell-'+VER, FONTS='fonts-'+VER;
 const FILES=['./','index.html','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png','icons/apple-touch-icon.png'];
 self.addEventListener('install',e=>{

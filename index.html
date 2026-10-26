@@ -177,6 +177,7 @@ details.sub[open]>summary::before{content:"− "}
 .ach{background:var(--panel-2);padding:10px;box-shadow:inset 0 0 0 2px var(--line);opacity:.6;min-width:0}
 .ach.on{opacity:1;box-shadow:inset 0 0 0 2px var(--bulb)}
 .ach b{display:block;font-size:13px;margin-bottom:2px;overflow-wrap:anywhere}
+.aic{width:24px;height:24px;image-rendering:pixelated;vertical-align:middle;margin-right:6px}
 .ach small{display:block;color:var(--muted);font-size:11px;line-height:1.4}
 .pip{display:inline-block;width:8px;height:8px;background:var(--line);margin-right:6px}
 .ach.on .pip{background:var(--bulb)}
@@ -250,7 +251,7 @@ details.sub[open]>summary::before{content:"− "}
     <button type="button" class="go" id="m-start">Старт</button>
     <button type="button" class="btn" id="m-set" data-en="Settings">Настройки</button>
   </div>
-  <p class="ver" data-en="BETA 0.4">БЕТА 0.4</p>
+  <p class="ver" data-en="BETA 0.5">БЕТА 0.5</p>
 </section>
 
 <!-- ПРОЛОГ -->
@@ -317,7 +318,7 @@ details.sub[open]>summary::before{content:"− "}
     <div id="bk-confirm" class="confirm" hidden style="margin-bottom:10px"></div>
     <p class="hint" data-en="A backup is a file with your hero. It helps if you change phones or clear browser data.">Копия — это файл с твоим героем. Пригодится, если сменишь телефон или очистишь данные браузера.</p>
     <span id="resetbox"><button type="button" class="link" id="reset">Сбросить прогресс</button></span>
-    <p class="hint" style="margin-bottom:0" data-en="Beta 0.4. The game is still in development.">Бета 0.4. Игра ещё дорабатывается.</p>
+    <p class="hint" style="margin-bottom:0" data-en="Beta 0.5. The game is still in development.">Бета 0.5. Игра ещё дорабатывается.</p>
   </div>
   <button type="button" class="btn small" id="set-back" data-en="Back">Назад</button>
 </section>
@@ -356,6 +357,7 @@ details.sub[open]>summary::before{content:"− "}
   <section class="panel" aria-label="Характеристики">
     <h2 class="h" data-en="Stats">Характеристики</h2>
     <div class="stats" id="stats"></div>
+    <div id="formbox" style="margin-top:14px"></div>
   </section>
 
   <section class="panel" aria-label="Цель">
@@ -701,6 +703,7 @@ const HOW=[
   {i:'arrow',t:['Расти и меняйся','Grow and change'],p:['Опыт даёт уровни. Новые уровни меняют героя, место тренировок и инвентарь: от ведра в подвале до арены.','XP gives levels. New levels change your hero, the place you train in and your gear: from a bucket in a basement to an arena.']},
   {i:'skull',t:['Задания и босс','Quests and boss'],p:['Каждый день три задания. Каждую неделю босс: выполни свой план, чтобы победить его.','Three quests every day. A boss every week: finish your plan to defeat it.']},
   {i:'flag',t:['Поставь цель','Set a goal'],p:['Выбери срок, например «до лета», и уровень. Игра покажет, успеваешь ли ты.','Pick a deadline, like "by summer", and a target level. The game shows whether you are on track.']},
+  {i:'phoenix',t:['Форма не вечна','Form fades'],p:['Если долго не тренироваться, характеристики остывают, а уровень падает. Сила держится дольше, выносливость уходит быстрее. Вернёшься, и мышечная память вернёт прежнее вдвое быстрее. Болеешь или в отпуске? Включи паузу.','If you stop training for long, your stats cool down and your level drops. Strength lasts longer, endurance fades faster. Come back and muscle memory returns your old form twice as fast. Sick or on vacation? Turn on the pause.']},
   {i:'heart',t:['Береги себя','Stay safe'],p:['Игра не заменяет настоящую тренировку. Разминайся, выбирай вес по силам и остановись, если что-то болит.','The game does not replace real training. Warm up, pick weights you can handle and stop if something hurts.']}
 ];
 const ICONS={
@@ -708,6 +711,7 @@ const ICONS={
   arrow:['.....yy.....','....yyyy....','...yyyyyy...','..yyyyyyyy..','....yyyy....','....yyyy....','....yyyy....','............','.........tt.','.......tttt.','.....tttttt.','tttttttttttt'],
   skull:['............','...wwwwww...','..wwwwwwww..','.wwwwwwwwww.','.wkkwwwwkkw.','.wkkwwwwkkw.','.wwwwkkwwww.','..wwwwwwww..','...wkwkwkw..','...wwwwwww..','............','............'],
   flag:['.gyyyyyyy...','.gyyyyyyyy..','.gyyyyyyy...','.gyyyyyy....','.g..........','.g..........','.g..........','.g..........','.g..........','.g..........','gggg........','gggg........'],
+  phoenix:['.....yy.....','....yyyy....','.o..oyyo..o.','oo.ooyyoo.oo','oooooyyooooo','.roooooooor.','..rooooooor.','...rroooorr.','.....oooo...','....ro..or..','...rr....rr.','..r........r'],
   heart:['............','..rrr..rrr..','.rrrrrrrrrr.','.rrrrrrrrrr.','.rrrrrrrrrr.','..rrrrrrrr..','...rrrrrr...','....rrrr....','.....rr.....','............','............','............']
 };
 const ICON_C={o:'#e0702f',g:'#9aa0b0',y:'#f5c542',t:'#4cc2b0',w:'#e9e6dc',k:'#14141a',r:'#d9525a'};
@@ -722,7 +726,7 @@ function fresh(){
     look:{sex:0,skin:1,hair:0,style:0,shirt:-1},fans:'all',
     goal:null,body:[],
     plan:{items:[{ex:'pushup',t:100},{ex:'squat',t:150},{ex:'plank',t:240},{ex:'run',t:3}]},
-    wk:[],over:0,bosses:0,
+    wk:[],over:0,bosses:0,f:null,
     prog:['str','leg','rest','core','end','leg','rest']
   };
 }
@@ -737,6 +741,13 @@ function normalize(o){
   if(!s.plan||!Array.isArray(s.plan.items))s.plan=fresh().plan;
   if(!Array.isArray(s.prog)||s.prog.length!==7)s.prog=fresh().prog;
   s.total=+s.total||0;s.rev=+s.rev||0;s.over=+s.over||0;s.bosses=+s.bosses||0;
+  if(s.f&&typeof s.f==='object'){
+    const q=s.f;
+    ['last','peak','sd'].forEach(k=>{if(!q[k]||typeof q[k]!=='object')q[k]={};});
+    if(!Array.isArray(q.plog))q.plog=[];
+    q.dn=+q.dn||0;
+    if(!q.dn)s.f=null;
+  }else s.f=null;
   if(typeof s.name!=='string')s.name='Герой';
   if(['all','girls','boys','off'].indexOf(s.fans)<0)s.fans='all';
   if(o.started===undefined)s.started=s.rev>0||s.total>0||s.log.length>0;
@@ -776,18 +787,152 @@ function statLevel(xp){
   const lo=25*(l-1)*(l-1),hi=25*l*l;
   return {l:l,pct:Math.min(100,(xp-lo)/(hi-lo)*100),to:hi-xp};
 }
+/* Серия: один пропущенный день не страшен, два подряд обнуляют.
+   Дни отдыха из программы недели и дни паузы пропуском не считаются. */
+function dayN(d){return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5);}
+function todayN(){return dayN(new Date());}
+function inPause(d){
+  const f=S.f;if(!f)return false;
+  if(f.pause&&d>=f.pause.s&&d<=f.pause.e)return true;
+  return f.plog.some(r=>d>=r[0]&&d<=r[1]);
+}
+function offDay(d){
+  return inPause(d)||S.prog[(new Date(d*864e5).getUTCDay()+6)%7]==='rest';
+}
 function streak(){
-  const set={};S.days.forEach(k=>{set[k]=1;});
-  const d=new Date();
-  if(!set[dkey(d)])d.setDate(d.getDate()-1);
-  let n=0;
-  while(set[dkey(d)]){n++;d.setDate(d.getDate()-1);}
+  const set={};let min=Infinity;
+  S.days.forEach(k=>{const n=dayN(parseKey(k));set[n]=1;if(n<min)min=n;});
+  if(min===Infinity)return 0;
+  let d=todayN();
+  if(!set[d])d--;
+  let n=0,miss=0,i=0;
+  while(d>=min&&i++<800){
+    if(set[d]){n++;miss=0;}
+    else if(!offDay(d)){miss++;if(miss>=2)break;}
+    d--;
+  }
   return n;
 }
 function weekKey(){const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7));return dkey(d);}
 function todayFocus(){return S.prog[(new Date().getDay()+6)%7];}
 function planMult(ex){return todayFocus()===ex.s?1.2:1;}
-function gain(ex,amt){const b=xpFor(ex,amt);return b>0?Math.max(1,Math.round(b*planMult(ex))):0;}
+function gain(ex,amt){
+  const b=xpFor(ex,amt);
+  if(b<=0)return 0;
+  let g=Math.max(1,Math.round(b*planMult(ex)));
+  if(memActive(ex.s))g+=Math.min(g,Math.max(0,Math.round(S.f.peak[ex.s]-(S.xp[ex.s]||0))));
+  return g;
+}
+
+/* ---------- форма: потеря опыта без тренировок и мышечная память ----------
+   Считаем по датам при каждом открытии игры, таймер не нужен.
+   Значения усилены против реальных исследований, чтобы эффект был заметен:
+   сила и корпус держатся дольше, выносливость уходит быстро. */
+const GRACE={str:21,leg:21,core:21,end:10};
+const RATE={str:0.012,leg:0.012,core:0.012,end:0.025};
+const FLOOR=0.75, MEM_DAYS=12, PAUSE_COOL=30;
+function ensureF(){
+  if(S.f)return S.f;
+  const tn=todayN(),f={last:{},peak:{},sd:{},dn:tn,pause:null,plog:[],fall:null,phx:0,mem:0,rep:null};
+  const days={};
+  S.log.forEach(e=>{
+    if(e.bonus)return;
+    const ex=find(e.ex);if(!ex)return;
+    days[ex.s]=days[ex.s]||{};days[ex.s][e.d]=1;
+  });
+  Object.keys(STATS).forEach(k=>{
+    f.last[k]=tn;f.peak[k]=S.xp[k]||0;f.sd[k]=days[k]?Object.keys(days[k]).length:0;
+  });
+  S.f=f;
+  return f;
+}
+function bumpPeak(){
+  const f=S.f;if(!f)return;
+  Object.keys(STATS).forEach(k=>{if((S.xp[k]||0)>(f.peak[k]||0))f.peak[k]=S.xp[k];});
+}
+function memActive(k){
+  const f=S.f;
+  return !!f&&(f.sd[k]||0)>=MEM_DAYS&&(S.xp[k]||0)<(f.peak[k]||0)-0.5;
+}
+function applyDecay(){
+  if(!S.started)return;
+  const f=ensureF(),tn=todayN();
+  bumpPeak();
+  let from=f.dn+1;
+  if(tn-1-from>400)from=tn-400;
+  const l0=lvl();let lost=0,changed=false;
+  for(let d=from;d<=tn-1;d++){
+    const paused=inPause(d);
+    Object.keys(STATS).forEach(k=>{
+      if(paused){if(f.last[k]<d)f.last[k]++;return;}
+      if(d-f.last[k]>GRACE[k]){
+        const floor=f.peak[k]*FLOOR,x=S.xp[k]||0;
+        if(x>floor){
+          const l=Math.min(x-floor,f.peak[k]*RATE[k]);
+          S.xp[k]=x-l;S.total-=l;lost+=l;
+        }
+      }
+    });
+  }
+  if(tn-1>f.dn){f.dn=tn-1;changed=true;}
+  if(f.pause&&f.pause.e<tn){
+    f.plog.push([f.pause.s,f.pause.e]);
+    if(f.plog.length>20)f.plog.shift();
+    f.pause=null;changed=true;
+  }
+  if(lost>0.5){
+    const l1=lvl();
+    if(l0-l1>=2&&(!f.fall||l0>f.fall))f.fall=l0;
+    f.rep={d:today(),lost:Math.round(lost),from:l0,to:l1};
+    toast(T('Пока тебя не было: −','While you were away: −')+Math.round(lost)+' XP'+(l1<l0?T(' · уровень ',' · level ')+l0+' → '+l1:''));
+    changed=true;
+  }
+  if(changed){checkAch();scheduleSave();}
+}
+function formLine(k){
+  const f=S.f;if(!f)return '';
+  const tn=todayN();
+  if(inPause(tn))return T('пауза','paused');
+  if(memActive(k))return T('мышечная память ×2 · до рекорда ещё ','muscle memory ×2 · to your record: ')+Math.round(f.peak[k]-(S.xp[k]||0))+' XP';
+  const idle=tn-f.last[k],left=GRACE[k]-idle,x=S.xp[k]||0;
+  if(x<=f.peak[k]*FLOOR+0.5&&x<f.peak[k]-0.5)return T('дно формы, потеря остановилась','form floor, loss has stopped');
+  if(left>0&&left<=7)return T('остывает через '+left+' дн.','cooling in '+left+' d');
+  if(left<=0)return T('теряет форму','losing form');
+  return T('в форме','in shape');
+}
+function renderForm(){
+  const el=$('formbox');if(!el)return;
+  const f=S.f,tn=todayN();
+  if(!f||!S.started){el.innerHTML='';return;}
+  let h='';
+  if(f.rep&&f.rep.d===today())h+='<p class="prog-today">'+esc(T('Пока тебя не было: −','While you were away: −')+f.rep.lost+' XP'+(f.rep.to<f.rep.from?T(', уровень ',', level ')+f.rep.from+' → '+f.rep.to:''))+'</p>';
+  if(f.pause&&f.pause.e>=tn){
+    h+='<p class="hint tight">'+esc(T('Пауза до ','Pause until ')+fmtDate(dkey(new Date(f.pause.e*864e5+12*36e5)))+T('. Форма не теряется, серия не рвётся.','. Form is frozen and the streak is safe.'))+'</p>'+
+       '<button type="button" class="btn small" id="pclear">'+T('Снять паузу','End pause')+'</button>';
+  }else{
+    let lastEnd=-1e9;f.plog.forEach(r=>{if(r[1]>lastEnd)lastEnd=r[1];});
+    const wait=PAUSE_COOL-(tn-lastEnd);
+    h+='<details class="sub"><summary>'+T('Пауза: болею или в отпуске','Pause: sick or on vacation')+'</summary><div class="sub-b">'+
+      '<p class="hint tight">'+esc(T('Пока пауза идёт, форма не падает и серия не рвётся. До 14 дней, не чаще раза в 30 дней.','While paused, your form does not drop and the streak is safe. Up to 14 days, once every 30 days.'))+'</p>'+
+      (wait>0?'<p class="note">'+esc(T('Следующая пауза через '+wait+' дн.','Next pause in '+wait+' d'))+'</p>'
+        :'<div class="tmb"><button type="button" class="btn small" data-pause="7">'+T('7 дней','7 days')+'</button><button type="button" class="btn small" data-pause="14">'+T('14 дней','14 days')+'</button></div>')+
+      '</div></details>';
+  }
+  el.innerHTML=h;
+}
+function startPause(n){
+  const f=ensureF(),tn=todayN();
+  if(f.pause&&f.pause.e>=tn)return;
+  f.pause={s:tn,e:tn+n-1};
+  scheduleSave();renderAll();
+  toast(T('Пауза включена','Pause on'));
+}
+function endPause(){
+  const f=S.f;if(!f||!f.pause)return;
+  f.pause.e=todayN()-1;
+  applyDecay();scheduleSave();renderAll();
+  toast(T('Пауза снята','Pause ended'));
+}
 function plural(n,f){
   if(lang==='en')return n===1?f[3]:f[4];
   const a=n%10,b=n%100;
@@ -843,6 +988,7 @@ function initCloud(){
             S=remote;
             try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}
             if(S.lang==='en'||S.lang==='ru')lang=S.lang;
+            applyDecay();
             applyLang();
             setSync('cloud');
           }else{flush();}
@@ -1105,6 +1251,14 @@ function drawIcon(name){
   x.clearRect(0,0,12,12);
   ICONS[name].forEach((row,y)=>{for(let k=0;k<12;k++){const ch=row[k];if(ch!=='.'){x.fillStyle=ICON_C[ch];x.fillRect(k,y,1,1);}}});
 }
+const ICON_URL={};
+function iconUrl(name){
+  if(ICON_URL[name])return ICON_URL[name];
+  const c=document.createElement('canvas');c.width=12;c.height=12;
+  const x=c.getContext('2d');
+  ICONS[name].forEach((row,y)=>{for(let k=0;k<12;k++){const ch=row[k];if(ch!=='.'){x.fillStyle=ICON_C[ch];x.fillRect(k,y,1,1);}}});
+  return (ICON_URL[name]=c.toDataURL('image/png'));
+}
 function howShow(i){
   howStep=i;
   const s=HOW[i];
@@ -1225,14 +1379,20 @@ const ACH=[
   {id:'boss4',n:['Охотник на боссов','Boss hunter'],d:['Победи четырёх боссов','Defeat four bosses'],ok:()=>S.bosses>=4},
   {id:'over',n:['Сверх плана','Over the plan'],d:['Перевыполни пункт недельного плана на 50%','Beat a weekly plan item by 50%'],ok:()=>S.over>=1},
   {id:'goal',n:['Цель достигнута','Goal reached'],d:['Дорасти до уровня, который поставил в цели','Reach the level you set in your goal'],ok:()=>!!S.goal&&S.total>=totalFor(S.goal.lvl)},
-  {id:'l5',n:['Новичок','Rookie'],d:['Дорасти до 5 уровня','Reach level 5'],ok:()=>lvl()>=5},
-  {id:'l10',n:['Качок','Lifter'],d:['Дорасти до 10 уровня','Reach level 10'],ok:()=>lvl()>=10},
-  {id:'l20',n:['Атлет','Athlete'],d:['Дорасти до 20 уровня','Reach level 20'],ok:()=>lvl()>=20},
-  {id:'l30',n:['Титан','Titan'],d:['Дорасти до 30 уровня','Reach level 30'],ok:()=>lvl()>=30}
+  {id:'l5',lose:1,n:['Новичок','Rookie'],d:['Дорасти до 5 уровня. Звание можно потерять, если забросить тренировки','Reach level 5. You can lose it if you stop training'],ok:()=>lvl()>=5},
+  {id:'l10',lose:1,n:['Качок','Lifter'],d:['Дорасти до 10 уровня. Звание можно потерять','Reach level 10. You can lose it'],ok:()=>lvl()>=10},
+  {id:'l20',lose:1,n:['Атлет','Athlete'],d:['Дорасти до 20 уровня. Звание можно потерять','Reach level 20. You can lose it'],ok:()=>lvl()>=20},
+  {id:'l30',lose:1,n:['Титан','Titan'],d:['Дорасти до 30 уровня. Звание можно потерять','Reach level 30. You can lose it'],ok:()=>lvl()>=30},
+  {id:'phoenix',secret:1,ic:'phoenix',n:['Вернулся из пепла','Rise from the ashes'],d:['Потеряй 2 уровня и более из-за перерыва, а потом вернись на прежний уровень','Lose 2 or more levels to a break, then climb back to your old level'],ok:()=>!!S.f&&!!S.f.phx},
+  {id:'memory',secret:1,ic:'dumbbell',n:['Мышцы помнят','Muscles remember'],d:['Верни прежний рекорд характеристики с помощью мышечной памяти','Regain a stat record with the help of muscle memory'],ok:()=>!!S.f&&!!S.f.mem}
 ];
 function checkAch(){
+  const f=S.f;
+  if(f&&f.fall&&lvl()>=f.fall){f.phx=1;f.fall=null;}
   ACH.forEach(a=>{
-    if(S.ach.indexOf(a.id)<0&&a.ok()){S.ach.push(a.id);toast(T('Достижение: ','Achievement: ')+P(a.n));}
+    const has=S.ach.indexOf(a.id)>=0,ok=a.ok();
+    if(!has&&ok){S.ach.push(a.id);toast(T('Достижение: ','Achievement: ')+P(a.n));}
+    else if(has&&a.lose&&!ok){S.ach.splice(S.ach.indexOf(a.id),1);toast(T('Потеряно: ','Lost: ')+P(a.n));}
   });
 }
 
@@ -1286,7 +1446,8 @@ function renderStats(){
     const st=statLevel(S.xp[k]||0),m=STATS[k];
     return '<div class="stat" style="--c:'+m.c+'"><div class="stat-h"><span>'+P(m.n)+'</span><b>'+st.l+'</b></div>'+
       '<div class="bar sm"><i style="width:'+st.pct+'%"></i></div>'+
-      '<div class="stat-x">'+Math.round(S.xp[k]||0)+' XP · '+T('ещё ','+')+Math.round(st.to)+'</div></div>';
+      '<div class="stat-x">'+Math.round(S.xp[k]||0)+' XP · '+T('ещё ','+')+Math.round(st.to)+'</div>'+
+      '<div class="stat-x" style="color:var(--bulb)">'+esc(formLine(k))+'</div></div>';
   }).join('');
 }
 function renderQuests(){
@@ -1302,8 +1463,10 @@ function renderQuests(){
 }
 function renderAch(){
   $('achs').innerHTML=ACH.map(a=>{
-    const on=S.ach.indexOf(a.id)>=0;
-    return '<div class="ach'+(on?' on':'')+'"><b><span class="pip"></span>'+esc(P(a.n))+'</b><small>'+esc(P(a.d))+'</small></div>';
+    const on=S.ach.indexOf(a.id)>=0,hide=a.secret&&!on;
+    const nm=hide?'???':P(a.n),ds=hide?T('Секретное достижение','Secret achievement'):P(a.d);
+    const ic=a.ic?'<img class="aic" alt="" src="'+iconUrl(a.ic)+'">':'<span class="pip"></span>';
+    return '<div class="ach'+(on?' on':'')+'"><b>'+ic+esc(nm)+'</b><small>'+esc(ds)+'</small></div>';
   }).join('');
 }
 function renderLog(){
@@ -1540,7 +1703,10 @@ function updatePreview(){
   const ex=cur(),xp=gain(ex,getAmt());
   $('go').textContent=T('Записать подход · +','Log set · +')+xp+' XP';
   $('go').disabled=xp<=0;
-  $('pvnote').textContent=planMult(ex)>1&&xp>0?T('Включая +20% за программу дня.','Includes +20% for today\'s program.'):'';
+  let note='';
+  if(xp>0&&memActive(ex.s))note+=T('Мышечная память: опыт ×2, пока не вернёшь рекорд. ','Muscle memory: ×2 XP until you regain your record. ');
+  if(xp>0&&planMult(ex)>1)note+=T('Включая +20% за программу дня.','Includes +20% for today\'s program.');
+  $('pvnote').textContent=note;
 }
 function buildSelect(){
   const sel=$('ex'),keep=sel.value||EX[0].id;
@@ -1575,6 +1741,7 @@ function markDay(){
   if(S.days.indexOf(k)<0){S.days.push(k);if(S.days.length>400)S.days.shift();}
 }
 function afterChange(levelBefore){
+  bumpPeak();
   checkAch();
   scheduleSave();
   renderAll();
@@ -1584,9 +1751,13 @@ function afterChange(levelBefore){
 function record(){
   const ex=cur(),amt=getAmt();
   if(!(amt>0))return;
-  const before=lvl(),xp=gain(ex,amt);
-  S.xp[ex.s]=(S.xp[ex.s]||0)+xp;
+  const f=ensureF(),k=ex.s,tn=todayN();
+  const before=lvl(),wasMem=memActive(k),xp=gain(ex,amt);
+  S.xp[k]=(S.xp[k]||0)+xp;
   S.total+=xp;
+  if(wasMem&&S.xp[k]>=f.peak[k]-0.01)f.mem=1;
+  if(f.last[k]!==tn)f.sd[k]=(f.sd[k]||0)+1;
+  f.last[k]=tn;
   S.totals[ex.id]=(S.totals[ex.id]||0)+amt;
   S.log.unshift({t:Date.now(),d:today(),ex:ex.id,en:exName(ex),amt:amt,xp:xp});
   markDay();
@@ -1708,7 +1879,7 @@ function saveCard(){
 /* ---------- общий рендер ---------- */
 function renderAll(){
   renderHero();renderStats();renderGoal();renderQuests();renderPlan();renderAch();
-  renderLog();renderCustom();renderBody();refreshLook();renderProg();renderProgToday();
+  renderLog();renderCustom();renderBody();refreshLook();renderProg();renderProgToday();renderForm();
   updatePreview();paint();
 }
 
@@ -1739,7 +1910,7 @@ $('fanset').addEventListener('click',e=>{
 $('create-back').addEventListener('click',()=>show('title'));
 $('create-ok').addEventListener('click',()=>{
   S.name=$('cname').value.trim()||T('Герой','Hero');
-  S.started=true;
+  S.started=true;ensureF();
   scheduleSave();renderAll();
   proShow(0);show('pro');
 });
@@ -1917,19 +2088,28 @@ $('bk-confirm').addEventListener('click',e=>{
     S=pendingImport;S.rev=rev;pendingImport=null;
     clearGoalForm();planEdit=false;
     $('bk-confirm').hidden=true;
+    applyDecay();
     applyLang();scheduleSave();
     toast(T('Прогресс восстановлен','Progress restored'));
   }
 });
 
+/* пауза */
+$('formbox').addEventListener('click',e=>{
+  const b=e.target.closest('[data-pause]');
+  if(b){startPause(+b.getAttribute('data-pause'));return;}
+  if(e.target.id==='pclear')endPause();
+});
+
 /* при сворачивании сразу записываем всё, не ждём паузы */
 document.addEventListener('visibilitychange',()=>{
-  if(!document.hidden)return;
+  if(!document.hidden){applyDecay();renderAll();refreshTitle();return;}
   try{localStorage.setItem(LS,JSON.stringify(S));}catch(e){}
   if(ref&&timer){clearTimeout(timer);timer=0;flush();}
 });
 
 /* ---------- старт ---------- */
+applyDecay();
 applyLang();
 setSync('local');
 show('title');
