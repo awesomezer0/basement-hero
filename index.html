@@ -250,7 +250,7 @@ details.sub[open]>summary::before{content:"− "}
     <button type="button" class="go" id="m-start">Старт</button>
     <button type="button" class="btn" id="m-set" data-en="Settings">Настройки</button>
   </div>
-  <p class="ver" data-en="BETA 0.3">БЕТА 0.3</p>
+  <p class="ver" data-en="BETA 0.4">БЕТА 0.4</p>
 </section>
 
 <!-- ПРОЛОГ -->
@@ -300,6 +300,13 @@ details.sub[open]>summary::before{content:"− "}
       <button type="button" class="btn chip" data-lang="ru" aria-pressed="true">Русский</button>
       <button type="button" class="btn chip" data-lang="en" aria-pressed="false">English</button>
     </div>
+    <span class="lab" data-en="Fan club">Клуб поклонников</span>
+    <div class="chips" id="fanset">
+      <button type="button" class="btn chip" data-fans="all" aria-pressed="true" data-en="Everyone">Все</button>
+      <button type="button" class="btn chip" data-fans="girls" aria-pressed="false" data-en="Girls">Девушки</button>
+      <button type="button" class="btn chip" data-fans="boys" aria-pressed="false" data-en="Boys">Парни</button>
+      <button type="button" class="btn chip" data-fans="off" aria-pressed="false" data-en="None">Нет</button>
+    </div>
     <button type="button" class="btn small" id="set-how" style="width:100%;margin-bottom:18px" data-en="How to play">Как играть</button>
     <span class="lab" data-en="Backup">Резервная копия</span>
     <div class="tmb" style="margin-bottom:10px">
@@ -310,7 +317,7 @@ details.sub[open]>summary::before{content:"− "}
     <div id="bk-confirm" class="confirm" hidden style="margin-bottom:10px"></div>
     <p class="hint" data-en="A backup is a file with your hero. It helps if you change phones or clear browser data.">Копия — это файл с твоим героем. Пригодится, если сменишь телефон или очистишь данные браузера.</p>
     <span id="resetbox"><button type="button" class="link" id="reset">Сбросить прогресс</button></span>
-    <p class="hint" style="margin-bottom:0" data-en="Beta 0.3. The game is still in development.">Бета 0.3. Игра ещё дорабатывается.</p>
+    <p class="hint" style="margin-bottom:0" data-en="Beta 0.4. The game is still in development.">Бета 0.4. Игра ещё дорабатывается.</p>
   </div>
   <button type="button" class="btn small" id="set-back" data-en="Back">Назад</button>
 </section>
@@ -337,6 +344,7 @@ details.sub[open]>summary::before{content:"− "}
         <div class="tier" id="tier">Дрищ</div>
         <div class="next" id="next"></div>
         <div class="next" id="inv"></div>
+        <div class="next" id="fanline"></div>
       </div>
       <div class="lvl"><span class="lvl-k">LVL</span><span class="lvl-n" id="lvl">1</span></div>
     </div>
@@ -711,7 +719,7 @@ function fresh(){
     v:3,rev:0,name:'Герой',lang:null,started:false,
     xp:{str:0,leg:0,core:0,end:0},total:0,totals:{},
     log:[],days:[],claimed:[],ach:[],custom:[],
-    look:{sex:0,skin:1,hair:0,style:0,shirt:-1},
+    look:{sex:0,skin:1,hair:0,style:0,shirt:-1},fans:'all',
     goal:null,body:[],
     plan:{items:[{ex:'pushup',t:100},{ex:'squat',t:150},{ex:'plank',t:240},{ex:'run',t:3}]},
     wk:[],over:0,bosses:0,
@@ -730,6 +738,7 @@ function normalize(o){
   if(!Array.isArray(s.prog)||s.prog.length!==7)s.prog=fresh().prog;
   s.total=+s.total||0;s.rev=+s.rev||0;s.over=+s.over||0;s.bosses=+s.bosses||0;
   if(typeof s.name!=='string')s.name='Герой';
+  if(['all','girls','boys','off'].indexOf(s.fans)<0)s.fans='all';
   if(o.started===undefined)s.started=s.rev>0||s.total>0||s.log.length>0;
   return s;
 }
@@ -971,9 +980,36 @@ function drawHero(tier,bob,pose,lk){
     if(tier>=2){R(x0-lw-1,ay-5,armW+1,5,skin);R(x0+sw+lw-armW,ay-5,armW+1,5,skin);}
   }
 }
+/* клуб болельщиков: новый зритель каждые 2-3 уровня, до десяти */
+const FAN_AT=[3,5,7,9,11,14,17,20,24,28];
+const FAN_X=[28,100,42,88,16,112,35,94,8,120];
+const fanCount=l=>S.fans==='off'?0:FAN_AT.filter(a=>l>=a).length;
+function drawFan(i,cheer,b){
+  const x=FAN_X[i],girl=S.fans==='girls'||(S.fans!=='boys'&&i%2===0);
+  const skin=SKINS[(i*3+1)%4],hair=HAIRS[(i*5+2)%HAIRS.length],shirt=SHIRTS[(i*2+1)%SHIRTS.length];
+  let y=46+(((b+i)&1)?0:1);
+  if(cheer)y-=(i%2?2:3);
+  if(cheer&&i%2===0){
+    const h='#d9525a';
+    R(x-2,y-7,2,1,h);R(x+1,y-7,2,1,h);R(x-2,y-6,5,1,h);R(x-1,y-5,3,1,h);R(x,y-4,1,1,h);
+  }
+  const legs=girl?3:5;
+  R(x-2,y+10,2,legs,'#2f3a5a');R(x,y+10,2,legs,'#2f3a5a');
+  R(x-3,y+4,6,girl?8:7,shirt);
+  if(cheer){R(x-4,y,1,5,skin);R(x+3,y,1,5,skin);}
+  else{R(x-4,y+5,1,4,skin);R(x+3,y+5,1,4,skin);}
+  R(x-2,y,4,4,skin);
+  R(x-2,y,4,1,hair);
+  if(girl){R(x-3,y,1,6,hair);R(x+2,y,1,6,hair);}
+  R(x-1,y+2,1,1,'#14141a');R(x+1,y+2,1,1,'#14141a');
+}
+function drawFans(l,b,p){
+  const n=fanCount(l);
+  for(let i=0;i<n;i++)drawFan(i,p!==0,b);
+}
 function drawOn(canvas,l,t,b,p,lk){
   const old=g;g=canvas.getContext('2d');
-  bg(t);props(l);drawHero(t,b,p,lk);
+  bg(t);drawFans(l,b,p);props(l);drawHero(t,b,p,lk);
   g=old;
 }
 
@@ -1031,6 +1067,7 @@ function refreshTitle(){
 }
 function refreshSettings(){
   [].forEach.call($('langs').children,b=>b.setAttribute('aria-pressed',b.getAttribute('data-lang')===lang?'true':'false'));
+  [].forEach.call($('fanset').children,b=>b.setAttribute('aria-pressed',b.getAttribute('data-fans')===S.fans?'true':'false'));
   resetUi(false);
 }
 
@@ -1220,6 +1257,8 @@ function showLevelUp(l,before){
   if(tierOf(l)>tierOf(before))lines.push(T('Новое место: ','New place: ')+P(PLACES[tierOf(l)]));
   const added=INV.filter(i=>i.l>before&&i.l<=l).map(i=>P(i.n));
   if(added.length)lines.push(T('В инвентаре: ','New gear: ')+added.join(', '));
+  const nf=Math.max(0,fanCount(l)-fanCount(before));
+  if(nf)lines.push(T('Новых поклонников: ','New fans: ')+nf);
   $('lu-t').innerHTML=lines.map(esc).join('<br>');
   $('lvlup').hidden=false;
   $('lu-ok').focus();
@@ -1233,6 +1272,8 @@ function renderHero(){
   $('next').textContent=t<4?T('Следующее звание: ','Next rank: ')+P(TIERS[t+1])+T(' на уровне ',' at level ')+TIER_AT[t+1]:T('Высшее звание. Дальше только рекорды.','Top rank. Only records from here.');
   const have=INV.filter(i=>lv.l>=i.l).length,nx=INV.find(i=>lv.l<i.l);
   $('inv').textContent=T('Инвентарь: ','Gear: ')+have+T(' из ',' of ')+INV.length+(nx?T(' · дальше: ',' · next: ')+P(nx.n)+T(' на уровне ',' at level ')+nx.l:T(' · зал собран',' · gym complete'));
+  const fc=fanCount(lv.l),nextFan=FAN_AT.find(a=>lv.l<a);
+  $('fanline').textContent=S.fans==='off'?'':T('Поклонники: ','Fans: ')+fc+(nextFan?T(' · следующий на уровне ',' · next at level ')+nextFan:T(' · полная толпа',' · full crowd'));
   const pct=Math.min(100,lv.rem/lv.need*100);
   $('xpfill').style.width=pct+'%';
   $('xpbar').setAttribute('aria-valuenow',Math.round(pct));
@@ -1690,6 +1731,11 @@ $('g-set').addEventListener('click',()=>{setFrom='game';show('set');});
 $('set-back').addEventListener('click',()=>show(setFrom));
 $('set-how').addEventListener('click',()=>openHow('set'));
 $('langs').addEventListener('click',e=>{const b=e.target.closest('[data-lang]');if(b){setLang(b.getAttribute('data-lang'));refreshSettings();}});
+$('fanset').addEventListener('click',e=>{
+  const b=e.target.closest('[data-fans]');if(!b)return;
+  S.fans=b.getAttribute('data-fans');
+  refreshSettings();renderHero();paint();scheduleSave();
+});
 $('create-back').addEventListener('click',()=>show('title'));
 $('create-ok').addEventListener('click',()=>{
   S.name=$('cname').value.trim()||T('Герой','Hero');
